@@ -5,6 +5,7 @@ const util = require('util');
 require('dotenv').config();
 const crypto = require('crypto');
 
+// Inscription de l'utilisateur
 exports.register = async (req, res) => {
   try {
     const {username, email, password} = req.body;
@@ -39,6 +40,7 @@ exports.register = async (req, res) => {
   }
 };
 
+// Connexion de l'utilisateur
 exports.login = async (req, res) => {
   try {
     const {username, password} = req.body;
@@ -48,7 +50,6 @@ exports.login = async (req, res) => {
     }
 
     const query = util.promisify(db.query).bind(db);
-
     const connexionQuery = "SELECT * FROM users WHERE username = ?";
     const login = await query(connexionQuery, [username]);
 
@@ -66,10 +67,10 @@ exports.login = async (req, res) => {
     }
 
     // Génération du token d'accès
-    const accessToken = jwt.sign({id: user.id, name: user.username}, process.env.JWT_SECRET, {expiresIn:"1h"});
+    const accessToken = jwt.sign({id: user.id}, process.env.JWT_SECRET, {expiresIn:"1h"});
 
     // Génération du token de rafraichissement
-    const refreshToken = crypto.randomBytes(64).toString('hex');
+    const refreshToken = jwt.sign({id: user.id}, process.env.JWT_SECRET, {expiresIn:"7d"});
 
     // Eviter l'accumulation de token de rafraichissement
     const deleteOldTokenQuery = "DELETE FROM tokens WHERE user_id = ?";
@@ -83,5 +84,51 @@ exports.login = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({message: "Erreur lors de la connexion !"});
+  }
+}
+
+// Rafraichissement du token
+exports.refreshToken = async (req, res) => {
+  try {
+    const {refreshToken} = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({message: "Token de rafraichissement manquant !"});
+    }
+
+    // Vérification de la présence du token de rafraichissement dans la base de données
+    const query = util.promisify(db.query).bind(db);
+    const refreshTokenQuery = "SELECT * FROM tokens WHERE refresh_token = ?";
+    const token = await query(refreshTokenQuery, [refreshToken]);
+
+    if (token.length === 0) {
+      return res.status(401).send("Token incorrect !");
+    }
+
+    try {
+      const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+      const userId = decoded.id;
+
+      // Génération d'un nouveau accessToken
+      const newAccessToken = jwt.sign({id: userId}, process.env.JWT_SECRET, {expiresIn:"1h"});
+
+      // Génération d'un nouveau refreshToken en base
+      const newRefreshToken = jwt.sign({id: userId}, process.env.JWT_SECRET, {expiresIn:"7d"});
+
+      // Suppression de l'ancien refreshToken
+      await query("DELETE FROM tokens WHERE user_id = ?", [userId]);
+      
+      // Enregistrement du nouveau refreshToken en base
+      await query("INSERT INTO tokens (user_id, refresh_token) VALUES (?, ?)", [userId, newRefreshToken]);
+
+      return res.status(200).json({message: "Token rafraichi avec succès !", newAccessToken, newRefreshToken});
+
+    } catch (err) {
+      return res.status(401).json({message: "Token de rafraichissement invalide ou expiré !"})
+    }
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({message: "Erreur lors du rafraichissement du token !"});
   }
 }
