@@ -132,3 +132,31 @@ exports.refreshToken = async (req, res) => {
     res.status(500).json({message: "Erreur lors du rafraichissement du token !"});
   }
 }
+
+exports.logout = async (req, res) => {
+  try {
+    const {refreshToken} = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({message: "Token de rafraichissement manquant !"})
+    }
+
+    const query = util.promisify(db.query).bind(db);
+
+    // Vérification de l'éxistence du token en base
+    const refreshTokenQuery = "SELECT * FROM tokens WHERE refresh_token = ?";
+    const token = await query(refreshTokenQuery, [refreshToken]);
+
+    if (token.length === 0) {
+      return res.status(401).json({message: "Token invalide !"});
+    }
+
+    // Suppression du token de rafraichissement
+    await query("DELETE FROM tokens WHERE refresh_token = ?", [refreshToken]);
+
+    return res.status(200).json({message: "Déconnexion réussi !"});
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({message: "Erreur lors de la déconnexion !"});
+  }
+}
