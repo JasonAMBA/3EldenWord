@@ -160,3 +160,45 @@ exports.logout = async (req, res) => {
     res.status(500).json({message: "Erreur lors de la déconnexion !"});
   }
 }
+
+exports.updateUser = async (req, res) => {
+  try {
+    const userId = req.user.id; // On récupère l'id de l'utilisateur depuis le token d'accès
+
+    let {username, email, password} = req.body;
+
+    // Vérifier si l'utilisateur existe en base
+    const query = util.promisify(db.query).bind(db);
+    const userQuery = "SELECT * FROM users WHERE id = ?"
+    const user = await query(userQuery, [userId]);
+
+    if (user.length === 0) {
+      return res.status(404).json({message: "Utilisateur non trouvé"});
+    }
+
+    // Vérifier si au moins un champ a été envoyé
+
+    if (!username && !email && !password) {
+      return res.status(400).json({message: "Aucune information à mettre à jour !"})
+    }
+
+    // Hacher le mot de passe si il est fourni
+    if (password) {
+      password = await bcrypt.hash(password, 10);
+    }
+
+    const updateUserQuery = "UPDATE users set username = ?, email = ?, password = ? WHERE id = ?"
+    await query (updateUserQuery, [
+      username || user[0].username,
+      email || user[0].email,
+      password || user[0].password,
+      userId
+    ]);
+
+    return res.status(200).json({message : "Utilisateur mis à jour avec succès !"})
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({message: "Erreur lors de la mise à jour des informations de l'utilisateur !"})
+  }
+}
