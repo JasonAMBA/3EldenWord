@@ -34,3 +34,21 @@ exports.getRegionAndBosses = async (req, res) => {
     res.status(500).json({message: "Erreur lors de la récupération des données"})
   }
 }
+
+exports.getBossById = async (req, res) => {
+  try {
+    const {id: bossId} = req.params;
+    const query = util.promisify(db.query).bind(db);
+    const boss = await query("SELECT name, level, image_hint1, image_hint2, image_hint3, real_image FROM bosses WHERE id = ?", [bossId]);
+
+    if (boss.length === 0) {
+      return res.status(404).json({ message: "Boss non trouvé"});
+    }
+
+    const result = boss[0];
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({message: "Erreur lors de la récupération du boss !"});
+  }
+}
