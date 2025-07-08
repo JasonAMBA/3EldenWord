@@ -1,0 +1,161 @@
+* {
+  margin: 0;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+/* .blur{
+  filter: blur(10px);
+} */
+
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: 
+    "picture content"
+  ;
+  min-height: 100vh;
+  height: auto;
+}
+
+.metropolis-font {
+  font-family: 'metropolis', sans-serif;
+  font-weight: 600;
+}
+
+.cinzel-title {
+  font-family: 'cinzel', sans-serif;
+  font-weight: 700;
+  font-size: 2.5rem;
+  letter-spacing: 0.4px;
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #989898, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+button {
+  border-radius: 20px;
+  padding: 5px 15px;
+  cursor: pointer;
+}
+
+a {
+  text-decoration: none;
+}
+
+.img-picture {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter 0.4s ease, opacity 0.4s ease;
+}
+
+.content {
+  grid-area: content;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  justify-content: center;
+  gap: 50px;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  justify-content: center;
+  gap: 50px;
+}
+
+.second-ornement {
+  width: 165px;
+  height: auto;
+  filter:
+    drop-shadow(0 0 30px rgba(255, 244, 193, 0.5)) /* FFF4C1 à 50% */
+    drop-shadow(0 0 40px rgba(218, 165, 32, 0.7))  /* DAA520 à 70% */
+    drop-shadow(0 0 40px rgba(218, 165, 32, 0.25)); /* simulation du inner shadow */
+}
+
+.line-height {
+  line-height: 45px;
+}
+
+.flex-item-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  gap: 50px;
+}
+
+.border {
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+}
+
+.custom {
+  filter: 
+    saturate(1.2)
+    brightness(0.8)
+    contrast(1.1)
+  ;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+fieldset {
+  border: none;
+}
+
+input {
+  background-color: transparent;
+  border: none;
+  font-size: 16px;
+  color: white;
+  font-weight: 600;
+}
+
+input:focus {
+  outline: none;
+}
+
+input::placeholder {
+  text-align: center;
+}
+
+label {
+  font-size: 26px;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.shadow {
+  filter: drop-shadow(24px 24px 24px rgba(0, 0, 0, 0.25));
+}

@@ -5,12 +5,24 @@
 </template>
 
 <script>
+import { onMounted } from 'vue';
+import { useUserStore } from './stores/userStore';
+
 
 export default {
-  name: 'App'
+  name: 'App',
+  setup() {
+    const userStore  = useUserStore();
+
+    onMounted(() => {
+      setInterval(() => {
+        if (userStore.isAuthenticated) {
+          userStore.refreshToken()
+        }
+      }, 15 * 60 * 1000);
+    })
+  }
 }
 </script>
 
-<style>
-
-</style>
+<style src="./main.css"></style>

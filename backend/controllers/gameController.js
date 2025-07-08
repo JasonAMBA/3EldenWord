@@ -104,12 +104,13 @@ exports.makeGuess = async (req, res) => {
     }
 
     // Récupérer le nom réel du boss
-    const bossData = await query("SELECT name from bosses WHERE id = ?", [bossId]);
+    const bossData = await query("SELECT name, real_image from bosses WHERE id = ?", [bossId]);
     if (bossData.length === 0) {
       return res.status(404).json({message: "Boss non trouvé !"});
     }
 
     const correctAnswer = bossData[0].name;
+    const correctAnswerImage = bossData[0].real_image;
 
     // Normaliser la réponse (minuscule, sans ponctuation)
 
@@ -120,7 +121,7 @@ exports.makeGuess = async (req, res) => {
 
       // Marquer le niveau comme terminé
       await query("UPDATE progress SET is_completed = 1 WHERE user_id = ? AND boss_id = ?", [userId, bossId]);
-      return res.status(200).json({message: "Bonne réponse ! Niveau terminé !"});
+      return res.status(200).json({message: "Bonne réponse ! Niveau terminé !", correctAnswerImage});
     } else {
       // Mauvaise réponse !
 
@@ -132,5 +133,43 @@ exports.makeGuess = async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({message: "Erreur lors de la tentative !"});
+  }
+}
+
+exports.getRegionProgress = async (req,res) => {
+  try {
+    const userId = req.user.id;
+    const {regionId} = req.params;
+
+    if (!regionId) {
+      return res.status(400).json({message: "Region non spécifiée !"});
+    }
+
+    const query = util.promisify(db.query).bind(db);
+
+    // Récupérer tous les boss de la région
+    const bosses = await query("SELECT id from bosses WHERE region_id = ?", [regionId]);
+    const bossIds = bosses.map(b => b.id);
+
+    if (bossIds.length === 0) {
+      return res.status(404).json({message: "Aucun boss trouvé pour cette région !"});
+    }
+
+    // Récupérer les niveaux complétés par l'utilisateur
+    const placeholders = bossIds.map(() => '?').join(',');
+    const completedProgress = await query(`SELECT COUNT(*) AS completed FROM progress WHERE user_id = ? AND boss_id IN (${placeholders}) AND is_completed = 1`, [userId, ...bossIds]);
+
+    const completed = completedProgress[0].completed;
+    const total = bossIds.length;
+    const percentage = Math.round((completed / total) * 100);
+
+    return res.status(200).json({
+      completed,
+      total,
+      percentage
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({message: "Erreur lors du calcul de la progression !"})
   }
 }

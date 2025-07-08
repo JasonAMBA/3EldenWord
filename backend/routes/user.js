@@ -7,7 +7,7 @@ const authController = require('../middlewares/authJWT');
 router.post('/register', userController.register);
 router.post('/login', userController.login);
 router.post('/refresh-token', userController.refreshToken);
-router.delete('/logout', userController.logout);
+router.post('/logout', userController.logout);
 router.put('/', authController, userController.updateUser);
 
 module.exports = router;

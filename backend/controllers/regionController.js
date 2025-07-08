@@ -12,3 +12,22 @@ exports.getAllRegions = async (req, res) => {
     res.status(500).json({message: "Erreur lors de la récupération des régions"});
   }
 }
+
+// Récupérer une région
+exports.getRegionById = async (req, res) => {
+  try {
+    const {id: regionId} = req.params;
+    const query = util.promisify(db.query).bind(db);
+    const region = await query("SELECT * from regions where id = ?", [regionId]);
+
+    if (region.length === 0) {
+      return res.status(404).json({message: "Région non trouvée"});
+    }
+
+    const result = region[0];
+    res.status(200).json(result)
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({message: "Erreur lors de la récupération du boss !"});   
+  }
+}

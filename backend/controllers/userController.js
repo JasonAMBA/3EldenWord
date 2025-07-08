@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const util = require('util');
 require('dotenv').config();
-const crypto = require('crypto');
 
 // Inscription de l'utilisateur
 exports.register = async (req, res) => {
@@ -80,7 +79,15 @@ exports.login = async (req, res) => {
     const refreshTokenQuery = "INSERT INTO tokens (user_id, refresh_token) VALUES (?, ?)";
     await query(refreshTokenQuery, [user.id, refreshToken]);
 
-    res.status(200).json({message: "Connexion réussie !", accessToken, refreshToken});
+    res
+      .cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: false, 
+        sameSite: 'Lax', 
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours
+      })
+      .status(200)
+      .json({message: "Connexion réussie ! ", accessToken, username});
   } catch (err) {
     console.error(err);
     res.status(500).json({message: "Erreur lors de la connexion !"});
@@ -90,7 +97,7 @@ exports.login = async (req, res) => {
 // Rafraichissement du token
 exports.refreshToken = async (req, res) => {
   try {
-    const {refreshToken} = req.body;
+    const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
       return res.status(401).json({message: "Token de rafraichissement manquant !"});
@@ -121,7 +128,15 @@ exports.refreshToken = async (req, res) => {
       // Enregistrement du nouveau refreshToken en base
       await query("INSERT INTO tokens (user_id, refresh_token) VALUES (?, ?)", [userId, newRefreshToken]);
 
-      return res.status(200).json({message: "Token rafraichi avec succès !", newAccessToken, newRefreshToken});
+      // Remplacer l'ancien cookie
+      res.cookie("refreshToken", newRefreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'Lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 //
+      });
+
+      return res.status(200).json({message: "Token rafraichi avec succès !", newAccessToken});
 
     } catch (err) {
       return res.status(401).json({message: "Token de rafraichissement invalide ou expiré !"})
@@ -135,7 +150,7 @@ exports.refreshToken = async (req, res) => {
 
 exports.logout = async (req, res) => {
   try {
-    const {refreshToken} = req.body;
+    const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
       return res.status(400).json({message: "Token de rafraichissement manquant !"})
@@ -153,6 +168,13 @@ exports.logout = async (req, res) => {
 
     // Suppression du token de rafraichissement
     await query("DELETE FROM tokens WHERE refresh_token = ?", [refreshToken]);
+
+    // Suppression du cookie coté client
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'Lax'
+    });
 
     return res.status(200).json({message: "Déconnexion réussi !"});
   } catch (err) {
