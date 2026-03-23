@@ -1,7 +1,7 @@
 <template>
   <main class="container" :style="{background: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 9%, ${regionBackgrounds[region.name] || 'rgba(0,57,33,0.5)'} 100%)`}">
     <figure class="picture">
-      <img class="border custom img-picture" :src="region.image_url" :style="{filter: `drop-shadow(24px 24px 24px ${regionColors[region.name] || 'rgba(0,0,0,0.25)'})`}" alt="">
+      <img class="border custom img-picture" :src="region.image_url" alt="">
     </figure>
 
     <section class="content">
@@ -22,7 +22,7 @@
         <div class="burger-menu">
           <button
             @click="logout"
-            class="flex-item-center logout-btn"
+            class="flex-item-center btn-level"
             @mouseenter="isHovering = 'logout'"
             @mouseleave="isHovering = null"
             :style="{
@@ -36,7 +36,7 @@
           </button>
           <button
             @click="goToRegions"
-            class="flex-item-center logout-btn"
+            class="flex-item-center btn-level"
             @mouseenter="isHoveringRegions = 'region'"
             @mouseleave="isHoveringRegions = null"
             :style="{
@@ -50,7 +50,7 @@
           </button>
           <button
             @click="goToRegion(region.id)"
-            class="flex-item-center logout-btn"
+            class="flex-item-center btn-level"
             @mouseenter="isHoveringlevels = 'levels'"
             @mouseleave="isHoveringlevels = null"
             :style="{
@@ -61,6 +61,20 @@
           >
             <GamepadIcon/>
             <p>Menu des niveaux</p>
+          </button>
+          <button
+            @click="goToProfile"
+            class="flex-item-center btn-level"
+            @mouseenter="isHoveringProfile = 'profile'"
+            @mouseleave="isHoveringProfile = null"
+            :style="{
+              borderColor: regionColors[region.name],
+              backgroundColor: isHoveringProfile === 'profile' ? 'transparent' : regionColors[region.name],
+              color: isHoveringProfile === 'profile' ? regionColors[region.name] : 'white'
+            }"
+          >
+            <ProfileIcon />
+            <p>Profil</p>
           </button>
         </div>
       </div>
@@ -92,7 +106,9 @@ import LogoutIcon from '@/components/icons/LogoutIcon.vue';
 import MenuIcon from '@/components/icons/MenuIcon.vue';
 import RegionIcon from '@/components/icons/RegionIcon.vue';
 import { useUserStore } from '@/stores/userStore';
+import { useToastStore } from '@/stores/toastStore';
 import axios from 'axios';
+import ProfileIcon from '@/components/icons/ProfileIcon.vue';
 
 
 export default {
@@ -101,77 +117,71 @@ export default {
     MenuIcon,
     LogoutIcon,
     RegionIcon,
-    GamepadIcon
+    GamepadIcon,
+    ProfileIcon
   },
   computed: {
     userStore() {
       return useUserStore();
     },
-    regionColors2() {
-        return {
-          "Necrolimbe": "#C19D53",
-          "Liurnia": "#72BBFF",
-          "Caelid": "#FF7B7B",
-        };
-      },
-      regionColor() {
-        return this.regionColors2[this.region.name] || "#ffffff";
-      },
-      boldGoldStyle() {
-        return {
-          background: this.regionColor,
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        };
-      },
-      goldGradientStyle() {
-        return {
-          background: `linear-gradient(to right, ${this.regionColor}, ${this.regionColor}80)`,
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        };
-      }
+    regionColor() {
+      return this.regionColors[this.region.name] || "#ffffff";
+    },
+    boldGoldStyle() {
+      return {
+        background: this.regionColor,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent'
+      };
+    },
+    goldGradientStyle() {
+      return {
+        background: `linear-gradient(to right, ${this.regionColor}, ${this.regionColor}80)`,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent'
+      };
+    }
   },
   data() {
     return {
       isMenuOpen: false,
       regionId: this.$route.params.regionId,
       bossId: this.$route.params.bossId,
-      isHoverLogout: false,
       isHovering: null,
       isHoveringRegions: null,
       isHoveringlevels: null,
-      message:'',
-      error:'',
-      guess:'',
-      correctImage:'',
+      isHoveringProfile: null,
+      message: '',
+      error: '',
+      guess: '',
+      correctImage: '',
       boss: {
         level: null,
         hint1: '',
         hint2: '',
         hint3: '',
-        realImage:''
+        realImage: ''
       },
       region: {},
       regionColors: {
-          "Necrolimbe": "#C19D53",
-          "Liurnia": "#72BBFF",
-          "Caelid": "#FF7B7B"
-        },
-        regionBackgrounds: {
-          "Necrolimbe": "rgba(0, 57, 33, 0.5)",     // Or doré
-          "Liurnia": "rgba(114, 187, 255, 0.5)",       // Bleu lumineux
-          "Caelid": "rgba(255, 123, 123, 0.5)"         // Rouge maudit
-        }
+        "Necrolimbe": "#C19D53",
+        "Liurnia": "#72BBFF",
+        "Caelid": "#FF7B7B"
+      },
+      regionBackgrounds: {
+        "Necrolimbe": "rgba(0, 57, 33, 0.5)",
+        "Liurnia": "rgba(114, 187, 255, 0.5)",
+        "Caelid": "rgba(255, 123, 123, 0.5)"
+      }
     };
   },
   methods: {
     toggleMenu() {
-        this.isMenuOpen = !this.isMenuOpen;
-      },
+      this.isMenuOpen = !this.isMenuOpen;
+    },
     async fetchBossData() {
       try {
-        const response = await axios.get(`http://localhost:4000/boss/${this.bossId}`, {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/boss/${this.bossId}`, {
           withCredentials: true,
           headers: {
             Authorization: `${this.userStore.accessToken}`
@@ -189,7 +199,7 @@ export default {
     },
     async fetchRegionData() {
       try {
-        const response = await axios.get(`http://localhost:4000/regions/${this.regionId}`, {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/regions/${this.regionId}`, {
           withCredentials: true,
           headers: {
             Authorization: `${this.userStore.accessToken}`
@@ -203,7 +213,7 @@ export default {
     },
     async makeGuess() {
       try {
-        const response = await axios.post('http://localhost:4000/game/guess-boss', {
+        const response = await axios.post(`${process.env.VUE_APP_API_URL}/game/guess-boss`, {
           bossId: this.bossId,
           guess: this.guess
         }, {
@@ -215,36 +225,38 @@ export default {
         this.message = response.data.message;
         this.error = '';
 
-        // Si bonne réponse
+        const toast = useToastStore();
+
         if (response.data.correctAnswerImage) {
           this.correctImage = response.data.correctAnswerImage;
-          alert("Bravo ! Tu as deviné le bon boss ! 🔥");
+          toast.show("Bravo ! Tu as deviné le bon boss !", 'success');
 
           setTimeout(() => {
             this.$router.push(`/region/${this.regionId}/levels`);
           }, 2000)
         } else {
-          // Mauvaise réponse
-          alert(`${response.data.message} (${response.data.attemptsLeft} tentatives restantes)`);
+          toast.show(`${response.data.message} (${response.data.attemptsLeft} tentatives restantes)`, 'error');
         }
 
       } catch (err) {
+        const toast = useToastStore();
+
         if (err.response) {
           const status = err.response.status;
           const message = err.response.data.message;
 
           if (status === 429) {
-            alert("Attends 3 secondes avant de réessayer !")
+            toast.show("Attends 3 secondes avant de réessayer !", 'info');
           } else if (status === 403) {
-            alert(`${message}\nRetour à la sélection des niveaux...`);
+            toast.show(`${message} — Retour à la sélection des niveaux...`, 'error');
             setTimeout(() => {
               this.$router.push(`/region/${this.regionId}/levels`);
             }, 2000);
           } else {
-            alert(message)
+            toast.show(message, 'error');
           }
         } else {
-          alert("Erreur de connexion au serveur !")
+          toast.show("Erreur de connexion au serveur !", 'error');
         }
       }
     },
@@ -254,9 +266,12 @@ export default {
     goToRegion(regionId) {
       this.$router.push(`/region/${regionId}/levels`);
     },
+    goToProfile() {
+      this.$router.push('/profile');
+    },
     async logout() {
       try {
-        await axios.post("http://localhost:4000/users/logout", {}, {withCredentials: true});
+        await axios.post(`${process.env.VUE_APP_API_URL}/users/logout`, {}, { withCredentials: true });
 
         this.userStore.logout();
         this.$router.push('/login');
@@ -285,7 +300,8 @@ export default {
 }
 
 .img-indice {
-  width: 250px;
+  width: 100%;
+  max-width: 250px;
   height: auto;
   border-radius: 20px;
   object-fit: cover;
@@ -303,8 +319,20 @@ export default {
   border-radius: 10px;
   border: none;
   font-size: 18px;
-  width: 300px;
+  width: 100%;
+  max-width: 300px;
   margin-bottom: 10px;
+}
+
+@media (max-width: 480px) {
+  .grid-indices {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .img-indice {
+    max-width: 100%;
+  }
 }
 
 .guess-input::placeholder {
@@ -316,7 +344,13 @@ export default {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-
+.btn-level {
+  font-family: 'metropolis', sans-serif;
+  border: 2px solid;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
 
 .submit-btn {
   background-color: white;
@@ -327,7 +361,5 @@ export default {
   border-radius: 10px;
   cursor: pointer;
 }
-
-
 
 </style>

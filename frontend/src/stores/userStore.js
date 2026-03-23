@@ -24,7 +24,7 @@ export const useUserStore = defineStore('user', {
     },
     async refreshToken() {
       try {
-        const response = await axios.post('http://localhost:4000/users/refresh-token', {}, {withCredentials:true});
+        const response = await axios.post(`${process.env.VUE_APP_API_URL}/users/refresh-token`, {}, { withCredentials: true });
         this.accessToken = response.data.newAccessToken;
 
         localStorage.setItem("accessToken", response.data.newAccessToken);

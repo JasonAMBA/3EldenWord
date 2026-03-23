@@ -41,15 +41,15 @@
 
 <script>
 import SwordIcon from '@/components/icons/SwordIcon.vue';
-import GamepadIcon from '../components/icons/GamepadIcon.vue';
+import GamepadIcon from '@/components/icons/GamepadIcon.vue';
 
-  export default {
-    name: "HomePage",
-    components: {
-      GamepadIcon,
-      SwordIcon
-    }
+export default {
+  name: "HomePage",
+  components: {
+    GamepadIcon,
+    SwordIcon
   }
+}
 </script>
 
 <style>
@@ -66,10 +66,6 @@ import GamepadIcon from '../components/icons/GamepadIcon.vue';
   grid-area: picture;
 }
 
-/* .blur {
-  filter: blur(10px);
-} */
-
 .text-gold {
   background: linear-gradient(to right, rgba(193, 157, 83, 1), rgba(193, 157, 83, 0.5));
   -webkit-background-clip: text;
@@ -85,14 +81,6 @@ import GamepadIcon from '../components/icons/GamepadIcon.vue';
 .ornement {
   width: 500px;
   height: auto;
-}
-
-.title {
-  font-size: 36px;
-}
-
-.text {
-  font-size: 32px;
 }
 
 .max-width {

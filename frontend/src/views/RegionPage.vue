@@ -6,7 +6,7 @@
 
     <section class="content">
       <nav class="menu-nav">
-        <div class="pointer icon-wrapper" @click="toggleMenu">
+        <div class="pointer icon-wrapper-region" @click="toggleMenu">
           <MenuIcon/>
         </div>
       </nav>
@@ -24,9 +24,13 @@
         @click.self="toggleMenu"
       >
         <div class="burger-menu">
-          <button @click="logout" class="flex-item-center logout-btn">
+          <button @click="logout" class="flex-item-center btn-region">
             <LogoutIcon/>
             <p>Déconnexion</p>
+          </button>
+          <button @click="goToProfile" class="flex-item-center btn-region">
+            <ProfileIcon/>
+            <p>Profil</p>
           </button>
         </div>
       </div>
@@ -61,76 +65,77 @@
 <script>
 import LogoutIcon from '@/components/icons/LogoutIcon.vue';
 import MenuIcon from '@/components/icons/MenuIcon.vue';
+import ProfileIcon from '@/components/icons/ProfileIcon.vue';
 import { useUserStore } from '@/stores/userStore';
 import axios from 'axios';
 
 
-  export default {
-    name: "RegionPage",
-    components: {
-      MenuIcon,
-      LogoutIcon
-    },
-    computed: {
-      userStore() {
-        return useUserStore();
-      }
-    },
-    data() {
-      return {
-        isMenuOpen: false,
-        regions: [],
-        regionColors: {
-          "Necrolimbe": "#C19D53",
-          "Liurnia": "#72BBFF",
-          "Caelid": "#FF7B7B",
-        },
-        isHovering: null
-      }
-    },
-    methods: {
-      toggleMenu() {
-        this.isMenuOpen = !this.isMenuOpen;
-      },
-      async fetchRegions() {
-        try {
-          const response = await axios.get("http://localhost:4000/regions", {
-            withCredentials: true,
-            headers: {
-              Authorization: `${this.userStore.accessToken}`
-            }
-          });
-          this.regions = response.data;
-        } catch (error) {
-          console.error("Erreur lors de la récupération des régions !", error);
-        }
-      },
-      async logout() {
-        try {
-          await axios.post("http://localhost:4000/users/logout", {}, {withCredentials: true});
-
-          this.userStore.logout();
-          this.$router.push('/login');
-        } catch (error) {
-          console.error("Erreur lors de la déconnexion !", error);
-        }
-      },
-      goToRegion(regionId) {
-        this.$router.push(`/region/${regionId}/levels`)
-      }
-    },
-    mounted() {
-      this.fetchRegions();
+export default {
+  name: "RegionPage",
+  components: {
+    MenuIcon,
+    LogoutIcon,
+    ProfileIcon
+  },
+  computed: {
+    userStore() {
+      return useUserStore();
     }
+  },
+  data() {
+    return {
+      isMenuOpen: false,
+      regions: [],
+      regionColors: {
+        "Necrolimbe": "#C19D53",
+        "Liurnia": "#72BBFF",
+        "Caelid": "#FF7B7B",
+      },
+      isHovering: null
+    }
+  },
+  methods: {
+    toggleMenu() {
+      this.isMenuOpen = !this.isMenuOpen;
+    },
+    async fetchRegions() {
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/regions`, {
+          withCredentials: true,
+          headers: {
+            Authorization: `${this.userStore.accessToken}`
+          }
+        });
+        this.regions = response.data;
+      } catch (error) {
+        console.error("Erreur lors de la récupération des régions !", error);
+      }
+    },
+    async logout() {
+      try {
+        await axios.post(`${process.env.VUE_APP_API_URL}/users/logout`, {}, { withCredentials: true });
+
+        this.userStore.logout();
+        this.$router.push('/login');
+      } catch (error) {
+        console.error("Erreur lors de la déconnexion !", error);
+      }
+    },
+    goToRegion(regionId) {
+      this.$router.push(`/region/${regionId}/levels`);
+    },
+    goToProfile() {
+      this.$router.push('/profile');
+    }
+  },
+  mounted() {
+    this.fetchRegions();
   }
+}
 
 </script>
 
 <style>
-.blue {
-  color: aqua;
-}
-
 .menu-overlay {
   position: fixed;
   top: 0;
@@ -159,17 +164,19 @@ import axios from 'axios';
   animation: slideIn 0.3s ease forwards;
 }
 
-.logout-btn {
+.btn-region {
   font-family: 'metropolis', sans-serif;
-  border: 2px solid;
+  border: 2px solid #C19D53;
   color: white;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
+  background-color: #C19D53;
 }
 
-.logout-btn:hover {
+.btn-region:hover {
   background-color: transparent;
+  color: #C19D53;
 }
 
 @keyframes slideIn {
@@ -182,9 +189,7 @@ import axios from 'axios';
 }
 
 .regions-scroll {
-  max-height: 60vh; /* ou la hauteur que tu veux */
-  overflow-y: auto;
-  margin-top: 30px;
+  width: 100%;
 }
 
 .region-grid {
@@ -209,9 +214,16 @@ import axios from 'axios';
 }
 
 .img-resize {
-  width: 275px;
+  width: 100%;
   height: auto;
   object-fit: cover;
+}
+
+@media (max-width: 480px) {
+  .region-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 }
 
 .region-name {
@@ -222,12 +234,12 @@ import axios from 'axios';
   font-family: 'Cinzel', serif;
 }
 
-.icon-wrapper {
-  color: #C19D53; 
+.icon-wrapper-region {
+  color: #C19D53;
 }
 
 .menu-nav {
-  align-self: flex-end; /* pousse le nav à droite dans le flex parent */
+  align-self: flex-end;
   width: 100%;
   display: flex;
   justify-content: flex-end;

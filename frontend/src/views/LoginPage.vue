@@ -56,6 +56,7 @@ import GamepadIcon from '@/components/icons/GamepadIcon.vue';
 import HomeIcon from '@/components/icons/HomeIcon.vue';
 import SwordIcon from '@/components/icons/SwordIcon.vue';
 import { useUserStore } from '@/stores/userStore';
+import { useToastStore } from '@/stores/toastStore';
 import axios from 'axios';
 
 
@@ -68,26 +69,23 @@ export default {
   },
   data() {
     return {
-      logUser: {username: '', password:''},
+      logUser: { username: '', password: '' },
       errorMessage: '',
       successMessage: ''
     }
   },
   methods: {
     async login() {
-      this.errorMessage =  ''
+      this.errorMessage = ''
       this.successMessage = ''
+      const toast = useToastStore();
       try {
-        const response = await axios.post('http://localhost:4000/users/login', this.logUser, {withCredentials: true});
+        const response = await axios.post(`${process.env.VUE_APP_API_URL}/users/login`, this.logUser, { withCredentials: true });
 
-        this.successMessage = response.data.message;
-        alert(this.successMessage);
-
-        // Stockage du token d'accès dans le local storage
         const userStore = useUserStore();
         userStore.login(response.data.accessToken, response.data.username);
 
-        // Redirection temporaire vers la page d'accueil
+        toast.show(response.data.message, 'success');
         this.$router.push('/regions');
       } catch (error) {
         console.error(error);

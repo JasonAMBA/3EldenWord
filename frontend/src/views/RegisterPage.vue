@@ -57,47 +57,48 @@
 </template>
 
 <script>
-import GamepadIcon from '../components/icons/GamepadIcon.vue';
+import GamepadIcon from '@/components/icons/GamepadIcon.vue';
 import SwordIcon from '@/components/icons/SwordIcon.vue';
-import HomeIcon from '../components/icons/HomeIcon.vue';
+import HomeIcon from '@/components/icons/HomeIcon.vue';
+import { useToastStore } from '@/stores/toastStore';
 import axios from 'axios';
 
-  export default {
-    name: "RegisterPage",
-    components: {
-      GamepadIcon,
-      SwordIcon,
-      HomeIcon
-    },
-    data() {
-      return {
-        newUser: {username: '', email:'', password:''},
-        errorMessage: '',
-        successMessage: ''
-      }
-    },
-    methods: {
-      async register() {
-        this.errorMessage = ''
-        this.successMessage = ''
-        try {
-          const response = await axios.post('http://localhost:4000/users/register', this.newUser);
+export default {
+  name: "RegisterPage",
+  components: {
+    GamepadIcon,
+    SwordIcon,
+    HomeIcon
+  },
+  data() {
+    return {
+      newUser: { username: '', email: '', password: '' },
+      errorMessage: '',
+      successMessage: ''
+    }
+  },
+  methods: {
+    async register() {
+      this.errorMessage = ''
+      this.successMessage = ''
+      const toast = useToastStore();
+      try {
+        const response = await axios.post(`${process.env.VUE_APP_API_URL}/users/register`, this.newUser);
 
-          this.successMessage = response.data.message
-          alert(this.successMessage)
-          this.$router.push('/login') // redirection vers la page de connexion
+        toast.show(response.data.message, 'success');
+        this.$router.push('/login')
 
-        } catch (error) {
-          console.log(error);
-          if (error.response && error.response.data && error.response.data.message) {
-            this.errorMessage = error.response.data.message
-          } else {
-            this.errorMessage = 'Une erreur inconnue est survenue'
-          }
+      } catch (error) {
+        console.log(error);
+        if (error.response && error.response.data && error.response.data.message) {
+          this.errorMessage = error.response.data.message
+        } else {
+          this.errorMessage = 'Une erreur inconnue est survenue'
         }
       }
     }
   }
+}
 </script>
 
 <style>

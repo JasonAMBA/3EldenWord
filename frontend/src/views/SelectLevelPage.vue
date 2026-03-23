@@ -1,7 +1,7 @@
 <template>
   <main class="container" :style="{background: `linear-gradient(to bottom, rgba(0, 0, 0, 1) 9%, ${regionBackgrounds[region.name] || 'rgba(0,57,33,0.5)'} 100%)`}">
     <figure class="picture">
-      <img class="border custom img-picture" :src="region.image" :style="{filter: `drop-shadow(24px 24px 24px ${regionColors[region.name] || 'rgba(0,0,0,0.25)'})`}" alt="">
+      <img class="border custom img-picture" :src="region.image" alt="">
     </figure>
 
     <section class="content">
@@ -23,7 +23,7 @@
         <div class="burger-menu">
           <button
             @click="logout"
-            class="flex-item-center logout-btn"
+            class="flex-item-center btn-select-level"
             @mouseenter="isHovering = 'logout'"
             @mouseleave="isHovering = null"
             :style="{
@@ -37,7 +37,7 @@
           </button>
           <button
             @click="goToRegions"
-            class="flex-item-center logout-btn"
+            class="flex-item-center btn-select-level"
             @mouseenter="isHoveringRegions = 'region'"
             @mouseleave="isHoveringRegions = null"
             :style="{
@@ -48,6 +48,20 @@
           >
             <RegionIcon />
             <p>Menu des régions</p>
+          </button>
+          <button
+            @click="goToProfile"
+            class="flex-item-center btn-select-level"
+            @mouseenter="isHoveringProfile = 'profile'"
+            @mouseleave="isHoveringProfile = null"
+            :style="{
+              borderColor: regionColors[region.name],
+              backgroundColor: isHoveringProfile === 'profile' ? 'transparent' : regionColors[region.name],
+              color: isHoveringProfile === 'profile' ? regionColors[region.name] : 'white'
+            }"
+          >
+            <ProfileIcon />
+            <p>Profil</p>
           </button>
         </div>
       </div>
@@ -87,142 +101,144 @@ import LogoutIcon from '@/components/icons/LogoutIcon.vue';
 import MenuIcon from '@/components/icons/MenuIcon.vue';
 import RegionIcon from '@/components/icons/RegionIcon.vue';
 import { useUserStore } from '@/stores/userStore';
+import { useToastStore } from '@/stores/toastStore';
 import axios from 'axios';
+import ProfileIcon from '@/components/icons/ProfileIcon.vue';
 
-  export default {
-    name: 'SelectLevelPage',
-    components: {
-      MenuIcon,
-      LogoutIcon,
-      RegionIcon
+export default {
+  name: 'SelectLevelPage',
+  components: {
+    MenuIcon,
+    LogoutIcon,
+    RegionIcon,
+    ProfileIcon
+  },
+  computed: {
+    userStore() {
+      return useUserStore();
     },
-    computed: {
-      userStore() {
-        return useUserStore();
-      },
-      regionColors2() {
-        return {
-          "Necrolimbe": "#C19D53",
-          "Liurnia": "#72BBFF",
-          "Caelid": "#FF7B7B",
-        };
-      },
-      regionColor() {
-        return this.regionColors2[this.region.name] || "#ffffff";
-      },
-      boldGoldStyle() {
-        return {
-          background: this.regionColor,
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        };
-      },
-      goldGradientStyle() {
-        return {
-          background: `linear-gradient(to right, ${this.regionColor}, ${this.regionColor}80)`,
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
-        };
-      }
+    regionColor() {
+      return this.regionColors[this.region.name] || "#ffffff";
     },
-    data() {
+    boldGoldStyle() {
       return {
-        isMenuOpen: false,
-        isHoverLogout: false,
-        isHovering: null,
-        isHoveringRegions: null,
-        regionId: this.$route.params.id,
-        region: {},
-        bosses: [],
-        progress: {
-          completed: 0,
-          total: 0,
-          percentage: 0
-        },
-        regionColors: {
-          "Necrolimbe": "#C19D53",
-          "Liurnia": "#72BBFF",
-          "Caelid": "#FF7B7B"
-        },
-        regionBackgrounds: {
-          "Necrolimbe": "rgba(0, 57, 33, 0.5)",     // Or doré
-          "Liurnia": "rgba(114, 187, 255, 0.5)",       // Bleu lumineux
-          "Caelid": "rgba(255, 123, 123, 0.5)"         // Rouge maudit
+        background: this.regionColor,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent'
+      };
+    },
+    goldGradientStyle() {
+      return {
+        background: `linear-gradient(to right, ${this.regionColor}, ${this.regionColor}80)`,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent'
+      };
+    }
+  },
+  data() {
+    return {
+      isMenuOpen: false,
+      isHovering: null,
+      isHoveringRegions: null,
+      isHoveringProfile: null,
+      regionId: this.$route.params.id,
+      region: {},
+      bosses: [],
+      progress: {
+        completed: 0,
+        total: 0,
+        percentage: 0
+      },
+      regionColors: {
+        "Necrolimbe": "#C19D53",
+        "Liurnia": "#72BBFF",
+        "Caelid": "#FF7B7B"
+      },
+      regionBackgrounds: {
+        "Necrolimbe": "rgba(0, 57, 33, 0.5)",
+        "Liurnia": "rgba(114, 187, 255, 0.5)",
+        "Caelid": "rgba(255, 123, 123, 0.5)"
+      }
+    }
+  },
+  methods: {
+    toggleMenu() {
+      this.isMenuOpen = !this.isMenuOpen;
+    },
+    async fetchRegionAndBosses() {
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/boss/regionandbosses/${this.regionId}`, {
+          withCredentials: true,
+          headers: {
+            Authorization: `${this.userStore.accessToken}`
+          }
+        });
+        this.region = response.data.region;
+        this.bosses = response.data.bosses;
+      } catch (error) {
+        console.error("Erreur lors de la récupération des niveaux", error);
+      }
+    },
+    async fetchProgress() {
+      try {
+        const response = await axios.get(`${process.env.VUE_APP_API_URL}/game/progress/${this.regionId}`, {
+          withCredentials: true,
+          headers: {
+            Authorization: `${this.userStore.accessToken}`
+          }
+        });
+        this.progress = response.data;
+      } catch (error) {
+        console.error("Erreur lors de la récupération de la progression : ", error);
+      }
+    },
+    async goToLevel(bossId) {
+      const toast = useToastStore();
+      try {
+        const response = await axios.post(`${process.env.VUE_APP_API_URL}/game/start-level`, { bossId }, {
+          withCredentials: true,
+          headers: {
+            Authorization: `${this.userStore.accessToken}`
+          }
+        });
+
+        if (response.data.attemptsLeft !== undefined && response.data.attemptsLeft < 5) {
+          toast.show(`Niveau en cours — ${response.data.attemptsLeft} tentative(s) restante(s)`, 'info');
+        }
+
+        this.$router.push(`/region/${this.regionId}/level/${bossId}`);
+      } catch (error) {
+        console.error("Impossible de démarrer le niveau :", error);
+
+        if (error.response && error.response.data && error.response.data.message) {
+          toast.show(error.response.data.message, 'error');
+        } else {
+          toast.show("Une erreur est survenue", 'error');
         }
       }
     },
-    methods: {
-      toggleMenu() {
-        this.isMenuOpen = !this.isMenuOpen;
-      },
-      async fetchRegionAndBosses() {
-        try {
-          const response = await axios.get(`http://localhost:4000/boss/regionandbosses/${this.regionId}`, {
-            withCredentials: true,
-            headers: {
-              Authorization: `${this.userStore.accessToken}`
-            }
-          });
-          this.region = response.data.region;
-          this.bosses = response.data.bosses;
-        } catch (error) {
-          console.error("Erreur lors de la récupération des niveaux");
-          
-        }
-      },
-      async fetchProgress() {
-        try {
-          const response = await axios.get(`http://localhost:4000/game/progress/${this.regionId}`, {
-            withCredentials: true,
-            headers: {
-              Authorization: `${this.userStore.accessToken}`
-            }
-          });
-          this.progress = response.data;
-        } catch (error) {
-          console.error("Erreur lors de la récupération de la progression : ", error);
-        }
-      },
-      async goToLevel(bossId) {
-        try {
-          await axios.post("http://localhost:4000/game/start-level", {bossId}, {
-            withCredentials: true,
-            headers: {
-              Authorization: `${this.userStore.accessToken}`
-            }
-          });
-
-          // Si le niveau est bien lancé, on redirige
-          this.$router.push(`/region/${this.regionId}/level/${bossId}`);
-        } catch (error) {
-          console.error("Impossible de démarrer le niveau :", error);
-
-          if (error.response && error.response.data && error.response.data.message) {
-            alert(error.response.data.message);
-          } else {
-            alert("Une erreur est survenue");
-          }
-        }
-      },
-      goToRegions() {
-        this.$router.push('/regions');
-      },
-      async logout() {
-        try {
-          await axios.post("http://localhost:4000/users/logout", {}, {withCredentials: true});
-
-          this.userStore.logout();
-          this.$router.push('/login');
-        } catch (error) {
-          console.error("Erreur lors de la déconnexion !", error);
-        }
-      },
+    goToRegions() {
+      this.$router.push('/regions');
     },
-    mounted() {
-      this.fetchRegionAndBosses();
-      this.fetchProgress();
-    }
+    goToProfile() {
+      this.$router.push('/profile');
+    },
+    async logout() {
+      try {
+        await axios.post(`${process.env.VUE_APP_API_URL}/users/logout`, {}, { withCredentials: true });
+
+        this.userStore.logout();
+        this.$router.push('/login');
+      } catch (error) {
+        console.error("Erreur lors de la déconnexion !", error);
+      }
+    },
+  },
+  mounted() {
+    this.fetchRegionAndBosses();
+    this.fetchProgress();
   }
+}
 </script>
 
 <style>
@@ -234,9 +250,25 @@ import axios from 'axios';
   margin-top: 20px;
 }
 
+@media (max-width: 1024px) {
+  .levels-container {
+    gap: 30px 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .levels-container {
+    gap: 20px;
+  }
+
+  .level-text {
+    font-size: 20px;
+  }
+}
+
 .level-card {
   position: relative;
-  width: 200px;
+  width: 100%;
   height: auto;
   border-radius: 20px;
   overflow: hidden;
@@ -252,7 +284,7 @@ import axios from 'axios';
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(0.5); /* Assombrit l'image pour mieux voir le texte */
+  filter: brightness(0.5);
 }
 
 .level-text{
@@ -265,6 +297,14 @@ import axios from 'axios';
   
   font-weight: bold;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.btn-select-level {
+  font-family: 'metropolis', sans-serif;
+  border: 2px solid;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .progress-wrapper {

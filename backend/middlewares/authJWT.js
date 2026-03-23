@@ -5,7 +5,7 @@ module.exports = (req, res, next) => {
   const accessToken = req.headers['authorization'];
 
   if (!accessToken) {
-    return res.status(401).json({message: "Token d'accès manquant !"});
+    return res.status(401).json({ message: "Token d'accès manquant !" });
   }
 
   try {
@@ -13,6 +13,6 @@ module.exports = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (err) {
-    return res.status(403).json({message: "token d'accès invalide ou expiré !"})
+    return res.status(403).json({ message: "Token d'accès invalide ou expiré !" })
   }
 }
