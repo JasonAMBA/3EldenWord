@@ -148,6 +148,8 @@ export default {
         this.$router.push('/login');
       } catch (error) {
         console.error("Erreur lors de la déconnexion !", error);
+        this.userStore.logout();
+        this.$router.push('/login');
       }
     },
     async deleteUser() {
