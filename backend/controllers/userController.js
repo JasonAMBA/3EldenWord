@@ -81,8 +81,8 @@ exports.login = async (req, res) => {
     res
       .cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: false,
-        sameSite: 'Lax',
+        secure: true,
+        sameSite: 'None',
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours
       })
       .status(200)
@@ -131,8 +131,8 @@ exports.refreshToken = async (req, res) => {
       // Remplacer l'ancien cookie
       res.cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
-        secure: false,
-        sameSite: 'Lax',
+        secure: true,
+        sameSite: 'None',
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours
       });
 
@@ -173,8 +173,8 @@ exports.logout = async (req, res) => {
     // Suppression du cookie côté client
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: false,
-      sameSite: 'Lax'
+      secure: true,
+      sameSite: 'None'
     });
 
     return res.status(200).json({ message: "Déconnexion réussie !" });
